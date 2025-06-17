@@ -1,0 +1,718 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아마존 K-뷰티 BSR 인터랙티브 분석 리포트</title>
+    <!-- Chosen Palette: Calm Harmony (#F5F5F4, #3A3A3A, #6D5D6E, #A7C4B8, #D87C5B) -->
+    <!-- Application Structure Plan: A top-down narrative SPA designed for intuitive data exploration. It begins with a high-level hero section summarizing the report's key finding (K-Beauty's dominance). This is followed by an overview dashboard comparing market share across key skincare categories. The core of the app is an interactive tabbed section, allowing users to deep-dive into each category's specific trends, analysis, and detailed product ranking tables. Following this, a competitive analysis section ranks top brands. The application concludes with a strategic SWOT-like analysis (Strengths/Weaknesses) and a final section presenting all raw ranking data tables for users needing granular detail. This structure was chosen to guide the user from a broad understanding to specific, actionable insights, making the dense report data accessible and engaging, which is a significant improvement over a static document format. -->
+    <!-- Visualization & Content Choices:
+        - Overall Market Share (e.g., 50% for Cleansing Oil): Goal: Inform -> Dynamic Stat KPI Cards -> Method: HTML/CSS -> Justification: Provides an immediate, high-impact display of the most critical metrics from the report.
+        - K-Beauty Product Count by Category: Goal: Compare -> Vertical Bar Chart -> Method: Chart.js/Canvas -> Justification: Offers an easy and effective visual comparison of K-Beauty's presence and strength across different categories.
+        - Top Brands by Product Count: Goal: Rank -> Horizontal Bar Chart -> Method: Chart.js/Canvas -> Justification: The best visualization choice for ranking named entities (brands) and clearly showing their competitive standing.
+        - Category-Specific Data: Goal: Organize/Explore -> Interactive Tabs with HTML Tables -> Method: JS, HTML, CSS -> Justification: Allows users to explore a large amount of detailed product data without cluttering the main view, promoting focused discovery.
+        - Strengths vs. Weaknesses: Goal: Compare -> Two-Column Layout -> Method: HTML/CSS Grid -> Justification: Creates a clear visual dichotomy to contrast the qualitative findings for skincare and makeup, aiding comprehension.
+        - All charts are rendered using Chart.js on Canvas, adhering to the no-SVG constraint.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F5F5F4;
+            color: #3A3A3A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 60vh;
+            }
+        }
+        .main-title { color: #3A3A3A; }
+        .accent-color { color: #6D5D6E; }
+        .highlight-color { color: #D87C5B; }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+            border: 1px solid #EAEAEA;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .tab-btn.active {
+            background-color: #6D5D6E;
+            color: white;
+        }
+        .tab-btn:not(.active) {
+            background-color: #EAEAEA;
+            color: #555555;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border-bottom: 1px solid #EAEAEA;
+            padding: 12px 16px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #F5F5F4;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:hover {
+            background-color: #F9F9F8;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .table-container::-webkit-scrollbar { width: 6px; }
+        .table-container::-webkit-scrollbar-track { background: #f1f1f1; }
+        .table-container::-webkit-scrollbar-thumb { background: #A7C4B8; border-radius: 3px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: #8F9D85; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 py-12 max-w-7xl">
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-6xl font-black main-title mb-4">아마존 K-뷰티 BSR 인터랙티브 리포트</h1>
+            <p class="text-lg text-gray-500">2025년 6월 16일 기준, 미국 아마존 뷰티 베스트셀러 순위(BSR) 심층 분석</p>
+        </header>
+
+        <main>
+            <section id="overview" class="mb-20">
+                <h2 class="text-3xl font-bold text-center main-title mb-3">한눈에 보는 시장 현황</h2>
+                <p class="text-center text-gray-500 mb-12 max-w-3xl mx-auto">K-뷰티는 아마존의 주요 스킨케어 카테고리에서 압도적인 점유율을 기록하며 시장을 선도하고 있습니다. 아래 차트와 카드는 K-뷰티의 영향력을 시각적으로 보여줍니다.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                    <div class="lg:col-span-2 card">
+                        <h3 class="font-bold text-xl mb-4 main-title text-center">카테고리별 K-뷰티 제품 수 (BSR Top 100)</h3>
+                        <div class="chart-container">
+                            <canvas id="categoryProductsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 text-center">
+                        <div class="card p-4">
+                            <h4 class="font-bold accent-color">클렌징 오일</h4>
+                            <p class="font-black text-5xl my-2 highlight-color">50<span class="text-3xl">%</span></p>
+                            <p class="text-sm text-gray-500">BSR 100위 내 점유율</p>
+                        </div>
+                         <div class="card p-4">
+                            <h4 class="font-bold accent-color">토너</h4>
+                            <p class="font-black text-5xl my-2">43<span class="text-3xl">%</span></p>
+                            <p class="text-sm text-gray-500">BSR 100위 내 점유율</p>
+                        </div>
+                         <div class="card p-4">
+                            <h4 class="font-bold accent-color">세럼</h4>
+                            <p class="font-black text-5xl my-2">33<span class="text-3xl">%</span></p>
+                            <p class="text-sm text-gray-500">BSR 100위 내 점유율</p>
+                        </div>
+                         <div class="card p-4">
+                            <h4 class="font-bold accent-color">선크림</h4>
+                            <p class="font-black text-5xl my-2">20<span class="text-3xl">%</span></p>
+                            <p class="text-sm text-gray-500">BSR 100위 내 점유율</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="deep-dive" class="mb-20">
+                <h2 class="text-3xl font-bold text-center main-title mb-3">카테고리별 심층 분석</h2>
+                <p class="text-center text-gray-500 mb-12 max-w-3xl mx-auto">이 섹션에서는 K-뷰티가 강세를 보이는 핵심 스킨케어 카테고리를 심층적으로 분석합니다. 각 탭을 클릭하여 카테고리별 시장 동향, 주요 인사이트, 그리고 베스트셀러 순위에 오른 상세 제품 목록을 확인해 보세요.</p>
+                
+                <div class="flex justify-center flex-wrap gap-3 mb-8" id="categoryDeepDiveTabs">
+                    <button class="tab-btn active" data-category="cleansing_oil">🧼 클렌징 오일</button>
+                    <button class="tab-btn" data-category="toner">💧 토너</button>
+                    <button class="tab-btn" data-category="serum">✨ 세럼</button>
+                    <button class="tab-btn" data-category="sunscreen">☀️ 선크림</button>
+                </div>
+
+                <div id="categoryDeepDiveDetails" class="card min-h-[500px]">
+                </div>
+            </section>
+
+            <section id="brands" class="mb-20">
+                <h2 class="text-3xl font-bold text-center main-title mb-3">K-뷰티 Top 브랜드 경쟁 구도</h2>
+                <p class="text-center text-gray-500 mb-12 max-w-3xl mx-auto">BSR 순위권 내 가장 많은 제품을 올린 브랜드는 어디일까요? 메디큐브와 COSRX가 시장을 이끌고 있으며, 아누아가 그 뒤를 바짝 쫓고 있습니다.</p>
+                 <div class="card">
+                    <h3 class="font-bold text-xl mb-4 main-title text-center">BSR 순위권 내 주요 K-뷰티 브랜드 제품 수</h3>
+                    <div class="chart-container h-[350px]">
+                        <canvas id="brandRankChart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="strategy" class="mb-20">
+                 <h2 class="text-3xl font-bold text-center main-title mb-3">전략적 분석: 강점과 기회</h2>
+                 <p class="text-center text-gray-500 mb-12 max-w-3xl mx-auto">K-뷰티의 아마존 내 성과는 스킨케어에 집중되어 있으며, 색조 부문은 상대적으로 약세를 보입니다. 이는 향후 성장 기회가 될 수 있습니다.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="card p-6 border-l-4" style="border-color: #A7C4B8;">
+                        <h3 class="font-bold text-2xl mb-3 flex items-center"><span class="text-3xl mr-3">🚀</span>강점: 스킨케어 리더십</h3>
+                        <p class="text-gray-600">클렌징 오일, 토너, 세럼 등 핵심 카테고리에서 높은 점유율과 견고한 상위 브랜드 포지션을 유지하며 시장을 선도하고 있습니다.</p>
+                    </div>
+                    <div class="card p-6 border-l-4" style="border-color: #D87C5B;">
+                        <h3 class="font-bold text-2xl mb-3 flex items-center"><span class="text-3xl mr-3">💡</span>기회: 색조 시장 잠재력</h3>
+                        <p class="text-gray-600">기초 제품 대비 BSR 순위권 내 제품 수가 적고 정체 양상을 보입니다. 티르티르, 클리오 등 일부 브랜드가 선전하고 있으나 전반적인 확대가 필요한 시장입니다.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="all-rankings" class="mb-20">
+                <h2 class="text-3xl font-bold text-center main-title mb-3">전체 랭킹 데이터</h2>
+                <p class="text-center text-gray-500 mb-12 max-w-3xl mx-auto">전체 B&P 부문과 세부 메이크업 카테고리를 포함한 모든 랭킹 데이터를 확인하세요.</p>
+                
+                <div class="flex justify-center flex-wrap gap-3 mb-8" id="fullRankingTabs">
+                    <button class="tab-btn active" data-category="overall_bp">전체 B&P</button>
+                    <button class="tab-btn" data-category="makeup_cleansing">메이크업 클렌징</button>
+                    <button class="tab-btn" data-category="facial_cleansing">페이셜 클렌징</button>
+                    <button class="tab-btn" data-category="makeup">색조 (전체)</button>
+                    <button class="tab-btn" data-category="foundation_makeup">파운데이션</button>
+                    <button class="tab-btn" data-category="lip_makeup">립 메이크업</button>
+                </div>
+
+                <div id="fullRankingDetails" class="card min-h-[500px]">
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="text-center mt-24 pt-8 border-t border-gray-200">
+            <h3 class="text-xl font-bold main-title">최종 결론 및 제언</h3>
+            <p class="text-gray-600 mt-4 max-w-3xl mx-auto">
+                아마존 BSR 데이터는 K-뷰티의 강력한 스킨케어 경쟁력을 명확히 보여줍니다. 시장을 지배하는 상위 브랜드의 성공 전략을 벤치마킹하는 동시에, 성장 잠재력이 큰 색조 카테고리에 대한 전략적 접근과 혁신적인 신제품 개발이 필요한 시점입니다. 본 인터랙티브 리포트가 귀사의 성공적인 미국 시장 진출 전략 수립에 기여하기를 바랍니다.
+            </p>
+        </footer>
+    </div>
+
+<script>
+const reportData = {
+    cleansing_oil: {
+        title: "클렌징 오일",
+        count: 50,
+        trend: 2,
+        description: "전체 카테고리 중 K-뷰티 점유율이 가장 높으며, 무려 50%를 차지합니다. 아누아, SKIN1004 등 상위권 브랜드의 수요가 압도적이며, 설화수, 라네즈 등 아모레퍼시픽 계열의 강세 또한 특징적입니다.",
+        tableData: [
+            { rank: '#1', name: '어성초 포어 컨트롤 클렌징 오일', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#2', name: '마다가스카르 센텔라 라이트 클렌징 오일', brand: '크레이버', manufacturer: '한국화장품' },
+            { rank: '#5', name: '메디큐브 제로 포어 클렌징 오일', brand: '에이피알', manufacturer: '앤코스' },
+            { rank: '#7', name: '하루하루원더 블랙 라이스 모이스처 클렌징 오일', brand: '디에프에스컴퍼니', manufacturer: '지디케이화장품' },
+            { rank: '#8', name: '마리오 퓨어 클렌징 오일 코리안 페이셜 클렌저', brand: '마니또공장', manufacturer: '코스메카코리아' },
+            { rank: '#9', name: '조선미녀 진생 클렌징 오일', brand: '구이아오글로벌', manufacturer: '그린코스' },
+            { rank: '#10', name: '더페이스샵 라이스 워터 브라이트 라이트 페이셜 클렌징 오일', brand: 'LG생활건강', manufacturer: 'LG생활건강' },
+            { rank: '#12', name: 'AVCA 코리안 블랙헤드 리무버 오일 클렌저 포 페이스', brand: '아브카', manufacturer: '씨앤피' },
+            { rank: '#13', name: '믹순 미숫가루 클렌징 오일', brand: '믹순', manufacturer: '잉글우드랩코리아' },
+            { rank: '#15', name: 'iUNIK 칼렌듈라 & 호호바 오일 인퓨즈드 비건 클렌징 오일', brand: 'iUNIK', manufacturer: '한국콜마' },
+            { rank: '#16', name: '맥스클리닉 로즈 비타민 오일 투 폼', brand: '엔블리스', manufacturer: '한국화장품' },
+            { rank: '#17', name: '메디스킨 글로잉 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#19', name: '설화수 젠틀 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#20', name: '비플레인 그린풀 비건 클렌징 오일', brand: '모던컴퍼니', manufacturer: '노디나리' },
+            { rank: '#21', name: '라운드랩 1025 독도 클렌징 오일', brand: '라운드랩', manufacturer: '한국콜마' },
+            { rank: '#24', name: '누니 코리안 페이셜 오일 클렌저', brand: '누니(미미박스)', manufacturer: '앨앤엘' },
+            { rank: '#25', name: '푸리토 프롬 그린 클렌징 오일 오리지널', brand: '하이라이터', manufacturer: '잉글로아' },
+            { rank: '#27', name: '넘버즈인 No.1 이지 피지 클렌징 오일', brand: '비나우', manufacturer: '삼성메디코스' },
+            { rank: '#28', name: '한스킨 AHA 포어 클렌징 오일', brand: '셀트리온스킨큐어', manufacturer: '코스메카코리아' },
+            { rank: '#30', name: '마리오 허브 그린 클렌징 오일', brand: '마니또공장', manufacturer: '클리오' },
+            { rank: '#32', name: '바이오던스 콜라겐 클렌징 오일', brand: '뷰티팩션', manufacturer: '나우코스' },
+            { rank: '#33', name: '더마로지 바이 네오젠랩 네오젠 카밍 클렌징 오일', brand: '아우토테카', manufacturer: '코스메카코리아' },
+            { rank: '#35', name: '편강율 딥 클렌징 오일(오일 타입)', brand: '편강한방피부과학연구소', manufacturer: '한방화장품 HBMIC' },
+            { rank: '#37', name: '비건프룻 클린 앤 글로우 그린 오일 포 드라이 LHA 딥 클렌징 오일', brand: '부스터즈', manufacturer: '코스메카코리아' },
+            { rank: '#38', name: '프랭클리 딥 클렌징 오일', brand: '더쿠키', manufacturer: '비앤비코리아' },
+            { rank: '#39', name: '넘버즈인 No.3+ 글루타치온 C 페이셜 스파 클렌저', brand: '비나우', manufacturer: '코스메카코리아' },
+            { rank: '#40', name: '프리메라 올 프리 앤 이지 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#44', name: '프리메라 오일 투 폼 클렌저 코리안 딥 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#46', name: '디어클레어스 젠틀 블랙 프레쉬 클렌징 오일', brand: '위시컴퍼니', manufacturer: '나우코스' },
+            { rank: '#48', name: '퓨어 핏 시카 클렌징 오일', brand: 'COSRX(아모레시피)', manufacturer: '코스메카코리아' },
+            { rank: '#53', name: '이지함 닥터슈라클 프로 밸런스 딥 클렌징 오일', brand: '이지함(닥터슈라클)', manufacturer: '한국콜마' },
+            { rank: '#54', name: '바닐라코 클린 잇 제로 클렌징 카밍 밤', brand: '에프앤코', manufacturer: '바이오코스텍' },
+            { rank: '#56', name: '오르렌 머그워트 제로 카밍 클렌징 오일', brand: '페네트레', manufacturer: '앤코스' },
+            { rank: '#64', name: '일리윤 젠틀 클렌징 오일 250ml', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#65', name: 'K시크릿 서울 1988 클렌징 오일', brand: 'KSECRET', manufacturer: '세레코' },
+            { rank: '#71', name: '바닐라코 클린 잇 제로 포어 클레리파잉 클렌징 밤', brand: '에프앤코', manufacturer: '바이오코스텍' },
+            { rank: '#72', name: '하루하루원더 센텔라 솔루션 클렌징 오일', brand: '디에프에스컴퍼니', manufacturer: '리베스코' },
+            { rank: '#73', name: 'iUNIK 센텔라 아시아티카 클렌징 오일', brand: 'iUNIK', manufacturer: '노디나리' },
+            { rank: '#75', name: '비플레인 그린풀 비건 클렌징 오일', brand: '비플레인', manufacturer: '노디나리' },
+            { rank: '#80', name: '프로페티픽 트리플 퍼펙트 엔자임 클렌징', brand: '에이피알', manufacturer: '한국에스앤비' },
+            { rank: '#81', name: '이퀄베리 퍼플 라이스 포어 스무딩 클렌징 오일', brand: '부스터즈', manufacturer: '코스메카코리아' },
+            { rank: '#85', name: 'B: LAB 시카 소프트 멜라웨이 클렌징 밤', brand: '비랩', manufacturer: '코스메카코리아' },
+            { rank: '#91', name: '스팀베이스 마누카 허니 글로우 오일 투 폼 클렌저', brand: '하이아마', manufacturer: '정코스' },
+            { rank: '#92', name: '루트디 딥 클렌징 오일 메이크업 리무버 포 페이스', brand: '아모레퍼시픽', manufacturer: '코스메카코리아' },
+            { rank: '#94', name: '라네즈 퍼펙트 리뉴 클렌징 오일 투 폼 클렌저', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#95', name: '어성초 퍼펙트 클렌징 오일 패드', brand: '더파운더즈', manufacturer: '나우코스' },
+            { rank: '#99', name: 'LSO 수퍼 멜팅 솔루션 클렌징 오일', brand: '이엘', manufacturer: '코스맥스' },
+            { rank: '#96', name: '토리든 다이브 인 클렌징 오일 200ml', brand: '토리든', manufacturer: '한국콜마' }
+        ]
+    },
+    toner: {
+        title: "토너",
+        count: 43,
+        trend: -1,
+        description: "메디큐브의 '제로 모공 패드'가 1위를 굳건히 지키고 있습니다. COSRX는 6개, 아누아는 4개의 제품을 순위권에 올리는 등 주요 브랜드들이 시장을 장악하고 있습니다.",
+        tableData: [
+            { rank: '#1', name: '메디큐브 제로 모공 패드 2.0', brand: '에이피알', manufacturer: '메카코스' },
+            { rank: '#5', name: '어성초 77 수딩 토너', brand: '더파운더즈', manufacturer: '앤코스' },
+            { rank: '#7', name: '바이오마 하이드레이팅 밀키 토너', brand: 'We Are Luxe', manufacturer: '앤코스' },
+            { rank: '#8', name: '티르티르 밀크 스킨 토너', brand: '티르티르(다다이글로벌)', manufacturer: '이에스에스코스메틱' },
+            { rank: '#11', name: '아크웰 감초 pH 밸런싱 코리안 토너', brand: '비앤에이치코스메틱', manufacturer: '옥시젠디벨롭먼트' },
+            { rank: '#13', name: '쌀 70 글로우 밀키 토너', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#16', name: '아임프롬 라이스 토너', brand: '랩앤컴퍼니', manufacturer: '한국콜마' },
+            { rank: '#17', name: '6X 펩타이드 콜라겐 부스터', brand: 'COSRX(아모레시피)', manufacturer: '앤코스' },
+            { rank: '#18', name: '굿 몰레큘스 나이아신아마이드 브라이트닝 토너', brand: 'Good Molecules', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#19', name: '메디큐브 PDRN 핑크 펩타이드 토너', brand: '에이피알', manufacturer: '아이유피' },
+            { rank: '#20', name: '썸바이미 AHA BHA PHA 30 데이즈 미라클 토너', brand: '페레멘', manufacturer: '리봄' },
+            { rank: '#26', name: '라네즈 크림 스킨 토너', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#29', name: '조선미녀 맑은쌀겨토너', brand: '구이아오글로벌', manufacturer: '한국콜마' },
+            { rank: '#30', name: '하루하루원더 블랙 라이스 프로바이오틱스 배리어 에센스', brand: '디에프에스컴퍼니', manufacturer: '지디케이화장품' },
+            { rank: '#32', name: '하루하루원더 블랙 라이스 히알루론 토너 포 센서티브 스킨', brand: '디에프에스컴퍼니', manufacturer: '지디케이화장품' },
+            { rank: '#33', name: '이퀄베리 스위밍 풀 토너', brand: '부스터즈', manufacturer: '더원코스메틱' },
+            { rank: '#34', name: '어성초 77 토너 패드 70 시트', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#36', name: '메디힐 마데카소사이드 블레미쉬 패드', brand: '엘앤피코스메틱', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#37', name: '조선미녀 인삼에센스토너', brand: '구이아오글로벌', manufacturer: '그린코스' },
+            { rank: '#38', name: '편강율 에센스 토너', brand: '편강한방과학연구소', manufacturer: '한방화장품 HBMIC' },
+            { rank: '#41', name: '넘버즈인 No.5+ 나이아신아마이드 농축 토너 패드', brand: '비나우', manufacturer: '한국콜마' },
+            { rank: '#43', name: 'AHA/BHA 트리트먼트 토너', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#45', name: '아임프롬 머그워트 에센스', brand: '랩앤컴퍼니', manufacturer: '나투젠' },
+            { rank: '#46', name: '바이오던스 콜라겐 젤 토너 패드', brand: '코스메카이바이오텍', manufacturer: '씨앤피코리아' },
+            { rank: '#47', name: '하루하루원더 블랙 라이스 히알루론 토너 포 센서티브 스킨', brand: '디에프에스컴퍼니', manufacturer: '지디케이화장품' },
+            { rank: '#48', name: '블랙 라이스 히알루론 2% + AHA 4% 블랙헤드 엑스폴리언트 토너', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#54', name: '라운드랩 독도 토너', brand: '서린컴퍼니', manufacturer: '한국콜마' },
+            { rank: '#55', name: '넘버즈인 No.3 수퍼 글로잉 에센스 토너', brand: '비나우', manufacturer: '삼성메디코스' },
+            { rank: '#56', name: '아임프롬] 미니어처 라이스 토너, 머그워트 에센스', brand: '랩앤컴퍼니', manufacturer: '나투젠' },
+            { rank: '#58', name: '메디큐브 트리플 콜라겐 토너', brand: '에이피알', manufacturer: '코스메카코리아' },
+            { rank: '#63', name: '이즈앤트리 그린티 프레쉬 토너', brand: '이오엔트리', manufacturer: '씨앤피' },
+            { rank: '#67', name: '풀 핏 프로폴리스 시너지 토너', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#68', name: 'BHA 2% 젠틀 엑스폴리에이팅 토너', brand: '더파운더즈', manufacturer: '한국콜마' },
+            { rank: '#69', name: '메디큐브 살몬 DNA PDRN 핑크 콜라겐 젤리 패드', brand: '에이피알', manufacturer: '메카코스' },
+            { rank: '#77', name: '센텔라 아시아티카 토닝 토너', brand: '크리이베', manufacturer: '코스맥스' },
+            { rank: '#78', name: '메디큐브 에이지-알 글루타치온 글로우 밀키 토너', brand: '에이피알', manufacturer: '한국메디켐' },
+            { rank: '#81', name: '더페이스샵 라이스 세라마이드 모이스처라이징 토너', brand: '더페이스샵(LG생활건강)', manufacturer: 'LG생활건강' },
+            { rank: '#82', name: '썸바이미 AHA BHA PHA 30 데이즈 미라클 트루시카 클리어 패드', brand: '페레멘', manufacturer: '리봄' },
+            { rank: '#83', name: 'AHA BHA PHA 30 데이즈 미라클 토너(오리지널 클리어 패드)', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#86', name: 'BHA 패드 (오리지널 클리어 패드)', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#87', name: '클레어스 서플 프레퍼레이션 언센티드 토너', brand: '위시컴퍼니', manufacturer: '이앤씨에스' },
+            { rank: '#88', name: '니들리 엑스폴리에이팅 페이셜 패드', brand: '내추럴엔도텍', manufacturer: '이앤씨' },
+            { rank: '#90', name: '닥터슈라클 비건 콤부차 티 에센스 – 하이드레이팅 밀키 토너', brand: '이지함(닥터슈라클)', manufacturer: '한국콜마' }
+        ]
+    },
+    serum: {
+        title: "세럼",
+        count: 33,
+        trend: 1,
+        description: "COSRX, 아누아, 메디큐브가 상위권을 유지하는 가운데, 믹순, VT 리들샷, 조선미녀 등 다양한 제품들이 꾸준한 인기를 얻으며 K-세럼의 저력을 보여주고 있습니다.",
+        tableData: [
+            { rank: '#6', name: '스네일 96 뮤신 파워 리페어링 에센스', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#5', name: '나이아신아마이드 10% + TXA 4% 세럼', brand: '더파운더즈', manufacturer: '코스맥스' },
+            { rank: '#9', name: '메디큐브 살몬 DNA PDRN 핑크 펩타이드 세럼, 핑크 글로우 세럼', brand: '에이피알', manufacturer: '아이큐어' },
+            { rank: '#11', name: '굿 몰레큘스 디스컬러레이션 코렉팅 세럼', brand: 'Good Molecules', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#13', name: '굿 몰레큘스 히알루론산 세럼', brand: 'Good Molecules', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#21', name: '마다가스카르 센텔라 아시아티카 앰플 페이셜 세럼', brand: '크레이버', manufacturer: '에스겔바이오텍' },
+            { rank: '#22', name: '믹순 콩에센스 30ml', brand: '믹순', manufacturer: '하나코스 외' },
+            { rank: '#23', name: '아젤라산 10 히알루론 레드니스 수딩 세럼', brand: '더파운더즈', manufacturer: '코스맥스' },
+            { rank: '#25', name: '굿 몰레큘스 나이아신아마이드 세럼', brand: 'Good Molecules', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#29', name: 'VT 리들샷100', brand: '브이티', manufacturer: '이엔씨' },
+            { rank: '#30', name: '메디큐브 제로 엑소좀 샷 7,500 PPM 스피큘 페이셜 세럼', brand: '에이피알', manufacturer: '비엔비코리아' },
+            { rank: '#32', name: '6X 펩타이드 콜라겐 부스터 토너 세럼', brand: 'COSRX(아모레시피)', manufacturer: '앤코스' },
+            { rank: '#33', name: 'AXIS-Y 다크 스팟 코렉팅 글로우 세럼', brand: '아시아머스타드트레이드', manufacturer: '이스티인터내셔널생명과학' },
+            { rank: '#34', name: '조선미녀 쌀겨수맑은세럼', brand: '구이아오글로벌', manufacturer: '그린코스' },
+            { rank: '#36', name: '메디큐브 레티놀 8xM 부스터 세럼', brand: '에이피알', manufacturer: '코스맥스' },
+            { rank: '#57', name: '나이아신아마이드 15%', brand: 'COSRX(아모레시피)', manufacturer: '앤코스' },
+            { rank: '#59', name: '구달 비타C세럼', brand: '클리오', manufacturer: '코스맥스' },
+            { rank: '#60', name: '쌀 세라마이드 7 하이드레이팅 배리어 세럼', brand: '더파운더즈', manufacturer: '코스맥스' },
+            { rank: '#62', name: '토리든 다이브인 세럼', brand: '토리든', manufacturer: '세레코' },
+            { rank: '#71', name: '퓨어 비타민 C 23% 세럼', brand: 'COSRX(아모레시피)', manufacturer: '아모레퍼시픽' },
+            { rank: '#74', name: '굿 몰레큘스 수퍼 펩타이드 세럼', brand: 'Good Molecules', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#75', name: '넘버즈인 No.3: 비타민 농축 세럼', brand: '이피아', manufacturer: '코스맥스' },
+            { rank: '#79', name: '메디큐브 TXA+나이아신아마이드 15% 글로우 페이셜 세럼 포 애프터 스팟 케어', brand: '에이피알', manufacturer: '비엔비코리아' },
+            { rank: '#83', name: '메디큐브 살몬 DNA PDRN 핑크 원 데이 세럼', brand: '에이피알', manufacturer: '노디너리' },
+            { rank: '#84', name: '메디큐브 PDRN 핑크 콜라겐 엑소좀 샷 세럼', brand: '에이피알', manufacturer: '한국에스앤비' },
+            { rank: '#85', name: '셀리맥스 더 비트 아 레티놀 샷 타이트닝 부스터', brand: '셀리맥스', manufacturer: '이에스에스코스메틱' },
+            { rank: '#87', name: '피치 70 나이아신아마이드 세럼', brand: '더파운더즈', manufacturer: '코스맥스' },
+            { rank: '#88', name: '메디큐브 트리플 콜라겐 세럼 1.85 fl.oz', brand: '에이피알', manufacturer: '노디너리' },
+            { rank: '#76', name: '이퀄베리 바쿠치올 플럼핑 세럼', brand: '부스터즈', manufacturer: '앤에프씨' },
+            { rank: '#91', name: '마다가스카르 센텔라 톤 브라이트닝 캡슐 앰플', brand: '크레이버', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#92', name: '나이아신아마이드 5% + 스네일 뮤신 74% 듀얼 에센스', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#96', name: '프랭클리 클로저 세럼', brand: '더쿠키', manufacturer: '코스메카코리아' },
+            { rank: '#98', name: '셀리맥스 노니 에너지 앰플 30ml', brand: '앱솔브', manufacturer: '한국콜마' }
+        ]
+    },
+    sunscreen: {
+        title: "선크림",
+        count: 20,
+        trend: 1,
+        description: "달바, 조선미녀의 톤업 선크림에 대한 관심이 꾸준합니다. 특히 아누아의 신제품 'Zero-cast 선크림'이 무서운 상승세로 40위권 내에 진입하며 새로운 강자로 떠오르고 있습니다.",
+        tableData: [
+            { rank: '#8', name: '수퍼굽: 언씬 선스크린', brand: 'Supergoop', manufacturer: '잉글우드랩US(토토와)' },
+            { rank: '#9', name: '조선미녀 데일리 릴리프 선스크린 포 페이스 선 모이스처라이징 위드 브로드 스펙트럼', brand: '구다이글로벌', manufacturer: '한국콜마' },
+            { rank: '#11', name: '달바 피에몬테 워터풀 톤업 선스크린 브로드 스펙트럼 SPF 50', brand: '쥬비엘글로벌', manufacturer: '한국콜마' },
+            { rank: '#20', name: '조선미녀 데일리 틴티드 플루이드 선스크린 12 쉐이드 포 페이스 모이스처라이징', brand: '구다이글로벌', manufacturer: '코스메카코리아/잉글우드랩' },
+            { rank: '#23', name: '하루하루원더 블랙 라이스 모이스처 에어리핏 데일리 선스크린', brand: '디에프에프스컴퍼니', manufacturer: '한국콜마' },
+            { rank: '#25', name: '아비브 데일리 UV 디펜스 선스크린', brand: '아비브', manufacturer: '코스맥스' },
+            { rank: '#31', name: '이니스프리 데일리 UV 디펜스 선스크린', brand: '이니스프리', manufacturer: '아모레퍼시픽' },
+            { rank: '#36', name: '라운드랩 버치 주스 모이스처라이징 선스크린', brand: '라운드랩', manufacturer: '한국콜마' },
+            { rank: '#37', name: 'COSRX 선스크린 SPF 50 비타민 E 선스크린', brand: 'COSRX(아모레시피)', manufacturer: '앤코스' },
+            { rank: '#38', name: '어성초 제로-캐스트 모이스처라이징 피니쉬 선스크린', brand: '더파운더즈', manufacturer: '잉글우드랩US(토토와)' },
+            { rank: '#45', name: '믹순 빈 선스크린 SPF 50 에어리 텍스처 타입 포 페이스 코리안 스킨 케어', brand: '믹순', manufacturer: '한국콜마' },
+            { rank: '#48', name: '아비브 퀵 선스틱 프로텍션 바', brand: '아비브', manufacturer: '코스맥스' },
+            { rank: '#54', name: '어성초 실키 모이스처 마일드 선스크린', brand: '더파운더즈', manufacturer: '한국콜마' },
+            { rank: '#61', name: '[이즈앤트리] 히알루론산 워터리 선 젤 50ml', brand: '이오엔트리', manufacturer: '한국콜마' },
+            { rank: '#71', name: '썸바이미 V10 히알 에어 핏 선스크린', brand: '페렌벨', manufacturer: '리봄' },
+            { rank: '#76', name: '더마비 에브리데이 선 블록 라지 사이즈 선스크린', brand: '네오팜', manufacturer: '코스메카코리아' },
+            { rank: '#77', name: '이즈앤트리 히알루론산 데일리 선 젤', brand: '이오엔트리', manufacturer: '한국콜마' },
+            { rank: '#89', name: 'iUNIK 센텔라 카밍 모이스처 데일리 선스크린', brand: 'iUNIK', manufacturer: '에그리나' },
+            { rank: '#93', name: 'AHC 내추럴 퍼펙션 더블 쉴드 선 스틱', brand: '카바코리아', manufacturer: '한국콜마' },
+            { rank: '#100', name: '센텔라 선스크린 SPF 50, 에어리-라이트 히알루 시카 워터-핏 선 세럼', brand: '크리이베', manufacturer: '한국콜마' }
+        ]
+    },
+    overall_bp: {
+        title: "Beauty & Personal Care (전체)",
+        description: "아마존 B&P 부문 전체 BSR 100위권 내 K-뷰티 제품 리스트입니다. 다양한 스킨케어 및 일부 색조 제품이 포함되어 있습니다.",
+        tableData: [
+            { rank: '#1', name: '마이티 패치', brand: 'Mighty Patch', manufacturer: '티앤엘' },
+            { rank: '#9', name: '제로 모공 패드 2.0', brand: '에이피알', manufacturer: '앤코스' },
+            { rank: '#14', name: '스네일 96 뮤신 파워 리페어링 에센스', brand: 'COSRX(아모레시피)', manufacturer: '한국기능성화장품연구센터' },
+            { rank: '#15', name: '바이오던스 바이오 콜라겐 리얼 딥 마스크', brand: '코스베이직/뷰티셀렉션', manufacturer: '엔코스/제닉' },
+            { rank: '#23', name: '메디큐브 콜라겐 오버나잇 랩핑 필 오프 마스크 팩', brand: '에이피알', manufacturer: '코스맥스' },
+            { rank: '#38', name: '어성초 포어 컨트롤 클렌징 오일', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#50', name: '어성초 퀘르세티놀 포어 딥 클렌징 폼', brand: '더파운더즈', manufacturer: '앤코스' },
+            { rank: '#81', name: '라엘 플럼 패치, 미라클 인비저블 스팟 커버', brand: '라엘코리아', manufacturer: '와이앤케이헬스케어' },
+            { rank: '#96', name: '라네즈 립 글로이 밤', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#97', name: '달바 피에몬테 이탈리안 화이트 트러플 퍼스트 스프레이 세럼', brand: '쥬비엘글로벌', manufacturer: '비엔비코리아' }
+        ]
+    },
+    makeup_cleansing: {
+        title: "메이크업 클렌징 제품",
+        description: "클렌징 오일을 포함한 메이크업 클렌징 제품의 상세 랭킹입니다. K-뷰티 제품이 강세를 보이는 카테고리입니다.",
+        tableData: [
+            { rank: '#1', name: '어성초 포어 컨트롤 클렌징 오일', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#2', name: '마다가스카르 센텔라 라이트 클렌징 오일', brand: '크레이버', manufacturer: '한국화장품' },
+            { rank: '#5', name: '메디큐브 제로 포어 클렌징 오일', brand: '에이피알', manufacturer: '앤코스' },
+            { rank: '#7', name: '하루하루원더 블랙 라이스 모이스처 클렌징 오일', brand: '디에프에스컴퍼니', manufacturer: '지디케이화장품' },
+            { rank: '#8', name: '마리오 퓨어 클렌징 오일 코리안 페이셜 클렌저', brand: '마니또공장', manufacturer: '코스메카코리아' },
+            { rank: '#9', name: '조선미녀 진생 클렌징 오일', brand: '구이아오글로벌', manufacturer: '그린코스' },
+            { rank: '#10', name: '더페이스샵 라이스 워터 브라이트 라이트 페이셜 클렌징 오일', brand: 'LG생활건강', manufacturer: 'LG생활건강' },
+            { rank: '#12', name: 'AVCA 코리안 블랙헤드 리무버 오일 클렌저 포 페이스', brand: '아브카', manufacturer: '씨앤피' },
+            { rank: '#13', name: '믹순 미숫가루 클렌징 오일', brand: '믹순', manufacturer: '잉글우드랩코리아' },
+            { rank: '#15', name: 'iUNIK 칼렌듈라 & 호호바 오일 인퓨즈드 비건 클렌징 오일', brand: 'iUNIK', manufacturer: '한국콜마' },
+            { rank: '#16', name: '맥스클리닉 로즈 비타민 오일 투 폼', brand: '엔블리스', manufacturer: '한국화장품' },
+            { rank: '#17', name: '메디스킨 글로잉 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#19', name: '설화수 젠틀 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#20', name: '비플레인 그린풀 비건 클렌징 오일', brand: '모던컴퍼니', manufacturer: '노디나리' },
+            { rank: '#21', name: '라운드랩 1025 독도 클렌징 오일', brand: '라운드랩', manufacturer: '한국콜마' },
+            { rank: '#24', name: '누니 코리안 페이셜 오일 클렌저', brand: '누니(미미박스)', manufacturer: '앨앤엘' },
+            { rank: '#25', name: '푸리토 프롬 그린 클렌징 오일 오리지널', brand: '하이라이터', manufacturer: '잉글로아' },
+            { rank: '#27', name: '넘버즈인 No.1 이지 피지 클렌징 오일', brand: '비나우', manufacturer: '삼성메디코스' },
+            { rank: '#28', name: '한스킨 AHA 포어 클렌징 오일', brand: '셀트리온스킨큐어', manufacturer: '코스메카코리아' },
+            { rank: '#30', name: '마리오 허브 그린 클렌징 오일', brand: '마니또공장', manufacturer: '클리오' },
+            { rank: '#32', name: '바이오던스 콜라겐 클렌징 오일', brand: '뷰티팩션', manufacturer: '나우코스' },
+            { rank: '#33', name: '더마로지 바이 네오젠랩 네오젠 카밍 클렌징 오일', brand: '아우토테카', manufacturer: '코스메카코리아' },
+            { rank: '#35', name: '편강율 딥 클렌징 오일(오일 타입)', brand: '편강한방피부과학연구소', manufacturer: '한방화장품 HBMIC' },
+            { rank: '#37', name: '비건프룻 클린 앤 글로우 그린 오일 포 드라이 LHA 딥 클렌징 오일', brand: '부스터즈', manufacturer: '코스메카코리아' },
+            { rank: '#38', name: '프랭클리 딥 클렌징 오일', brand: '더쿠키', manufacturer: '비앤비코리아' },
+            { rank: '#39', name: '넘버즈인 No.3+ 글루타치온 C 페이셜 스파 클렌저', brand: '비나우', manufacturer: '코스메카코리아' },
+            { rank: '#40', name: '프리메라 올 프리 앤 이지 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#44', name: '프리메라 오일 투 폼 클렌저 코리안 딥 클렌징 오일', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#46', name: '디어클레어스 젠틀 블랙 프레쉬 클렌징 오일', brand: '위시컴퍼니', manufacturer: '나우코스' },
+            { rank: '#48', name: '퓨어 핏 시카 클렌징 오일', brand: 'COSRX(아모레시피)', manufacturer: '코스메카코리아' },
+            { rank: '#53', name: '이지함 닥터슈라클 프로 밸런스 딥 클렌징 오일', brand: '이지함(닥터슈라클)', manufacturer: '한국콜마' },
+            { rank: '#54', name: '바닐라코 클린 잇 제로 클렌징 카밍 밤', brand: '에프앤코', manufacturer: '바이오코스텍' },
+            { rank: '#56', name: '오르렌 머그워트 제로 카밍 클렌징 오일', brand: '페네트레', manufacturer: '앤코스' },
+            { rank: '#64', name: '일리윤 젠틀 클렌징 오일 250ml', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#65', name: 'K시크릿 서울 1988 클렌징 오일', brand: 'KSECRET', manufacturer: '세레코' },
+            { rank: '#71', name: '바닐라코 클린 잇 제로 포어 클레리파잉 클렌징 밤', brand: '에프앤코', manufacturer: '바이오코스텍' },
+            { rank: '#72', name: '하루하루원더 센텔라 솔루션 클렌징 오일', brand: '디에프에스컴퍼니', manufacturer: '리베스코' },
+            { rank: '#73', name: 'iUNIK 센텔라 아시아티카 클렌징 오일', brand: 'iUNIK', manufacturer: '노디나리' },
+            { rank: '#75', name: '비플레인 그린풀 비건 클렌징 오일', brand: '비플레인', manufacturer: '노디나리' },
+            { rank: '#80', name: '프로페티픽 트리플 퍼펙트 엔자임 클렌징', brand: '에이피알', manufacturer: '한국에스앤비' },
+            { rank: '#81', name: '이퀄베리 퍼플 라이스 포어 스무딩 클렌징 오일', brand: '부스터즈', manufacturer: '코스메카코리아' },
+            { rank: '#85', name: 'B: LAB 시카 소프트 멜라웨이 클렌징 밤', brand: '비랩', manufacturer: '코스메카코리아' },
+            { rank: '#91', name: '스팀베이스 마누카 허니 글로우 오일 투 폼 클렌저', brand: '하이아마', manufacturer: '정코스' },
+            { rank: '#92', name: '루트디 딥 클렌징 오일 메이크업 리무버 포 페이스', brand: '아모레퍼시픽', manufacturer: '코스메카코리아' },
+            { rank: '#94', name: '라네즈 퍼펙트 리뉴 클렌징 오일 투 폼 클렌저', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#95', name: '어성초 퍼펙트 클렌징 오일 패드', brand: '더파운더즈', manufacturer: '나우코스' },
+            { rank: '#99', name: 'LSO 수퍼 멜팅 솔루션 클렌징 오일', brand: '이엘', manufacturer: '코스맥스' },
+            { rank: '#96', name: '토리든 다이브 인 클렌징 오일 200ml', brand: '토리든', manufacturer: '한국콜마' }
+        ]
+    },
+    facial_cleansing: {
+        title: "페이셜 클렌징 제품",
+        description: "스킨케어-클렌징 제품군의 상세 랭킹입니다.",
+        tableData: [
+            { rank: '#6', name: '어성초 퀘르세티놀 포어 딥 클렌징 폼', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#43', name: '더페이스샵 라이스 워터 브라이트 라이트 페이셜 클렌징 오일', brand: '더페이스샵(LG생활건강)', manufacturer: 'LG생활건강' },
+            { rank: '#46', name: '메디큐브 제로 폼 클렌저 포 센서티브 스킨', brand: '에이피알', manufacturer: '한국화장품제조' },
+            { rank: '#50', name: '조선미녀 그린 플럼 리프레싱 클렌저 젤', brand: '구다이글로벌', manufacturer: '그린코스' },
+            { rank: '#53', name: 'COSRX 로우 pH 굿 모닝 젤 클렌저, 데일리 마일드 페이셜 클렌저', brand: 'COSRX(아모레시피)', manufacturer: '에이치앤씨' },
+            { rank: '#64', name: '아렌시아 라이스 모찌 페이스 클렌저', brand: '아렌시아', manufacturer: '에코먼트' },
+            { rank: '#66', name: '라운드랩 1025 독도 클렌저', brand: '서린컴퍼니', manufacturer: '코스맥스' }
+        ]
+    },
+    makeup: {
+        title: "Makeup (색조 전체)",
+        description: "전반적으로 기초 대비 약세를 보이는 메이크업 카테고리 전체 랭킹입니다.",
+        tableData: [
+            { rank: '#9', name: '어성초 포어 컨트롤 클렌징 오일', brand: '더파운더즈', manufacturer: '코스메카코리아' },
+            { rank: '#43', name: '마스크 핏 레드 쿠션 파운데이션', brand: '티르티르(구다이글로벌)', manufacturer: '코스맥스' },
+            { rank: '#60', name: '누니 코리안 립 오일', brand: '누니(미미박스)', manufacturer: '한국콜마' }
+        ]
+    },
+    foundation_makeup: {
+        title: "Foundation Makeup (색조-베이스)",
+        description: "색조 카테고리 중 파운데이션 및 베이스 메이크업 제품의 랭킹입니다.",
+        tableData: [
+            { rank: '#2', name: '마스크 핏 레드 쿠션 파운데이션', brand: '티르티르(구다이글로벌)', manufacturer: '코스맥스' },
+            { rank: '#3', name: '[정샘물 오피셜] 에센셜 스킨 누더 쿠션 기프트 세트(미디움)', brand: '정샘물뷰티', manufacturer: '코스맥스' },
+            { rank: '#43', name: '마스크 핏 올 커버 핑크 쿠션 파운데이션', brand: '티르티르(구다이글로벌)', manufacturer: '코스메카코리아' },
+            { rank: '#71', name: '블랑 커버 크림 스틱 V - 코리안 컬러 체인징 파운데이션 위드 디태처블', brand: '메가코스', manufacturer: '메가코스' },
+            { rank: '#86', name: '에이지 20s 시그니처 인텐스 선스크린 SPF 50+ 파운데이션', brand: '애경산업', manufacturer: '애경산업' },
+            { rank: '#87', name: '미샤 매직 쿠션 파운데이션 No.23', brand: '에이블씨엔씨', manufacturer: '씨앤피' },
+            { rank: '#98', name: '마스크 핏 아우라 실버 쿠션 파운데이션', brand: '티르티르(다다이글로벌)', manufacturer: '코스맥스' }
+        ]
+    },
+    lip_makeup: {
+        title: "립 메이크업 (색조-립)",
+        description: "색조 카테고리 중 립 메이크업 제품의 랭킹입니다.",
+        tableData: [
+            { rank: '#13', name: '누니 코리안 립 오일', brand: '누니(미미박스)', manufacturer: '한국콜마' },
+            { rank: '#14', name: '라네즈 크레이즈 틴티드 립 세럼', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#35', name: '페리페라 잉크 더 벨벳 립 틴트, 하이 피그먼트 컬러', brand: '클리오', manufacturer: '코코' },
+            { rank: '#37', name: '페리페라 잉크 무드 글로이 틴트', brand: '클리오', manufacturer: '씨앤씨인터내셔널' },
+            { rank: '#39', name: '네이처리퍼블릭 허니 멜팅 립 (07)', brand: '네이처리퍼블릭', manufacturer: '한국콜마' },
+            { rank: '#44', name: '에뛰드 디어 달링 워터 틴트', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#55', name: 'CNP 프로폴리스 젤리 립세린', brand: 'LG생활건강', manufacturer: 'LG생활건강' },
+            { rank: '#67', name: '에뛰드 디어 달링 워터 틴트', brand: '아모레퍼시픽', manufacturer: '아모레퍼시픽' },
+            { rank: '#82', name: 'CNP 프로폴리스 젤리 립세린', brand: 'LG생활건강', manufacturer: 'LG생활건강' }
+        ]
+    }
+};
+
+const chartColors = {
+    main: '#6D5D6E',
+    secondary: '#A7C4B8',
+    highlight: '#D87C5B',
+    text: '#3A3A3A',
+    grid: '#EAEAEA'
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tooltipCallback = {
+        plugins: {
+            tooltip: {
+                backgroundColor: 'rgba(58, 58, 58, 0.9)',
+                titleColor: '#FFFFFF',
+                bodyColor: '#FFFFFF',
+                titleFont: { weight: 'bold' },
+                padding: 10,
+                cornerRadius: 4,
+                callbacks: {
+                    title: function(tooltipItems) {
+                        const item = tooltipItems[0];
+                        let label = item.chart.data.labels[item.dataIndex];
+                        return Array.isArray(label) ? label.join(' ') : label;
+                    }
+                }
+            }
+        }
+    };
+
+    const categoryProductsCtx = document.getElementById('categoryProductsChart').getContext('2d');
+    new Chart(categoryProductsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['클렌징 오일', '토너', '세럼', '선크림', 'B&P 전체'],
+            datasets: [{
+                label: 'K-뷰티 제품 수',
+                data: [50, 43, 33, 20, 10],
+                backgroundColor: [chartColors.highlight, '#8F9D85', chartColors.secondary, '#B7B7A4', chartColors.main],
+                borderRadius: 4,
+                barPercentage: 0.7,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: chartColors.grid },
+                    ticks: { color: chartColors.text }
+                },
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: chartColors.text }
+                }
+            },
+            plugins: { ...tooltipCallback.plugins, legend: { display: false } }
+        }
+    });
+
+    const brandRankCtx = document.getElementById('brandRankChart').getContext('2d');
+    new Chart(brandRankCtx, {
+        type: 'bar',
+        data: {
+            labels: ['메디큐브', 'COSRX', '아누아'],
+            datasets: [{
+                label: 'BSR 진입 제품 수',
+                data: [14, 14, 12],
+                backgroundColor: [chartColors.main, chartColors.secondary, chartColors.highlight],
+                borderRadius: 4,
+                barPercentage: 0.6,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { 
+                    beginAtZero: true, 
+                    grid: { color: chartColors.grid },
+                    ticks: { color: chartColors.text, stepSize: 2 } 
+                },
+                y: { 
+                    grid: { display: false },
+                    ticks: { color: chartColors.text }
+                }
+            },
+            plugins: { ...tooltipCallback.plugins, legend: { display: false } }
+        }
+    });
+    
+    const categoryDeepDiveTabs = document.getElementById('categoryDeepDiveTabs');
+    const categoryDeepDiveDetails = document.getElementById('categoryDeepDiveDetails');
+
+    function createTable(tableData) {
+        let tableRows = '';
+        tableData.forEach(item => {
+            tableRows += `
+                <tr>
+                    <td class="font-bold">${item.rank}</td>
+                    <td>${item.name}</td>
+                    <td>${item.brand}</td>
+                    <td>${item.manufacturer}</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div class="table-container mt-6">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>제품명</th>
+                            <th>브랜드사</th>
+                            <th>제조사</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function updateDeepDiveDetails(category) {
+        const data = reportData[category];
+        if (!data) return;
+
+        let trendHtml = '';
+        if (data.trend > 0) {
+            trendHtml = `<span class="text-green-600 font-bold">▲ +${data.trend}개 (전주 대비)</span>`;
+        } else if (data.trend < 0) {
+            trendHtml = `<span class="text-red-600 font-bold">▼ ${data.trend}개 (전주 대비)</span>`;
+        } else {
+            trendHtml = `<span class="text-gray-500 font-bold">→ 변동 없음</span>`;
+        }
+
+        categoryDeepDiveDetails.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1">
+                     <h3 class="font-black text-2xl accent-color mb-3">${data.title}</h3>
+                    <div class="flex items-baseline mb-4">
+                        <p class="font-bold text-5xl">${data.count}<span class="text-2xl text-gray-500">개</span></p>
+                        <p class="ml-4">${trendHtml}</p>
+                    </div>
+                    <p class="text-gray-600 leading-relaxed">${data.description}</p>
+                </div>
+                <div class="lg:col-span-2">
+                    <h4 class="font-bold text-lg mb-3">주요 랭킹 제품</h4>
+                    ${createTable(data.tableData)}
+                </div>
+            </div>
+        `;
+    }
+
+    categoryDeepDiveTabs.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const category = e.target.dataset.category;
+            
+            categoryDeepDiveTabs.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            updateDeepDiveDetails(category);
+        }
+    });
+
+    updateDeepDiveDetails('cleansing_oil');
+
+    const fullRankingTabs = document.getElementById('fullRankingTabs');
+    const fullRankingDetails = document.getElementById('fullRankingDetails');
+
+    function updateFullRankingDetails(category) {
+        const data = reportData[category];
+        if (!data) return;
+
+        fullRankingDetails.innerHTML = `
+            <h3 class="font-black text-2xl accent-color mb-3">${data.title}</h3>
+            <p class="text-gray-600 leading-relaxed mb-6">${data.description}</p>
+            ${createTable(data.tableData)}
+        `;
+    }
+
+    fullRankingTabs.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const category = e.target.dataset.category;
+            
+            fullRankingTabs.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            updateFullRankingDetails(category);
+        }
+    });
+
+    updateFullRankingDetails('overall_bp');
+});
+</script>
+</body>
+</html>
+
+```
